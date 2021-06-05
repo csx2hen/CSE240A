@@ -36,7 +36,12 @@ int verbose;
 //
 //TODO: Add your own Branch Predictor data structures here
 //
-
+// Gshare data structures
+uint8_t* gshareTable;
+int gshareHistory, gshareLength, gshareMask, gshareIndex;
+void init_Gshare();
+uint8_t gshare_prediction(uint32_t pc);
+void train_gshare(uint8_t outcome);
 
 //------------------------------------//
 //        Predictor Functions         //
@@ -50,6 +55,17 @@ init_predictor()
   //
   //TODO: Initialize Branch Predictor Data Structures
   //
+
+  switch (bpType) {
+    case STATIC:
+      break;
+    case GSHARE:
+      init_Gshare();
+    case TOURNAMENT:
+    case CUSTOM:
+    default:
+      break;
+  }
 }
 
 // Make a prediction for conditional branch instruction at PC 'pc'
@@ -68,6 +84,7 @@ make_prediction(uint32_t pc)
     case STATIC:
       return TAKEN;
     case GSHARE:
+      return gshare_prediction(pc);
     case TOURNAMENT:
     case CUSTOM:
     default:
@@ -88,4 +105,54 @@ train_predictor(uint32_t pc, uint8_t outcome)
   //
   //TODO: Implement Predictor training
   //
+
+  switch (bpType) {
+    case STATIC:
+      break;
+    case GSHARE:
+      train_gshare(outcome);
+    case TOURNAMENT:
+    case CUSTOM:
+    default:
+      break;
+  }
+}
+
+void 
+init_Gshare()
+{
+  gshareLength = 1 << ghistoryBits;
+  gshareMask = gshareLength - 1;
+  gshareTable = malloc(sizeof(uint8_t)*(gshareLength));
+  for(int i = 0; i < gshareLength; i++) {
+    gshareTable[i] = WN;
+  }
+  return;
+}
+
+uint8_t
+gshare_prediction(uint32_t pc)
+{
+  gshareIndex = (pc ^ gshareHistory) & gshareMask;
+  if(gshareTable[gshareIndex] < WT) {
+    return 0;
+  }
+  else {
+    return 1;
+  }
+}
+
+void
+train_gshare(uint8_t outcome)
+{
+  // update history
+  gshareHistory = ((gshareHistory << 1) | outcome) & gshareMask;
+  // update table
+  if (outcome == 0 && gshareTable[gshareIndex] > SN) {
+    gshareTable[gshareIndex] -= 1;
+  }
+  if (outcome == 1 && gshareTable[gshareIndex] < ST) {
+    gshareTable[gshareIndex] += 1;
+  }
+  return;
 }
