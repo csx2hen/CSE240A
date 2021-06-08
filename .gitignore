@@ -1,2 +1,2 @@
-*.o
-src/predictor
+cmake-build-debug
+bin
