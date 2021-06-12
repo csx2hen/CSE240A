@@ -5,30 +5,31 @@
 #include "predictor.h"
 #include "custom.h"
 
-#define ADDR_LENGTH 4
+#define ADDR_LENGTH 5
+#define HIS_ADDR_LENGTH 3
 #define GHIST_LENGTH 30
 #define SAT_VALUE 127
-int weights[(1<< ADDR_LENGTH)][(1<< ADDR_LENGTH)][GHIST_LENGTH+1];
+int weights[(1<< ADDR_LENGTH)][(1<< HIS_ADDR_LENGTH)][GHIST_LENGTH+1];
 int ghistorylength;
 uint8_t gHistReg[GHIST_LENGTH];
 uint32_t addr[GHIST_LENGTH];
 int output;
 uint8_t prediction;
 int theta;
-int mask, pcMasked;
+int mask, mask1, pcMasked;
 
 void
 init_custom() {
-    //TODO make all arrays 0
     mask = ((1 << ADDR_LENGTH) -1);
+    mask1 = ((1 << HIS_ADDR_LENGTH) -1);
     ghistorylength = GHIST_LENGTH;
 //    theta = 2.14*(GHIST_LENGTH + 1) + 20.58;
-    theta = 1.93 * (float)GHIST_LENGTH + 14;
+    theta = 1.93 * (float)(GHIST_LENGTH + 1) + 14;
     //theta=32;
     int i,j,k;
     for(i=0; i< (1<< ADDR_LENGTH); i++)
     {
-        for(j=0; j < (1<< ADDR_LENGTH); j++)
+        for(j=0; j < (1<< HIS_ADDR_LENGTH); j++)
         {
             for(k=0; k<= GHIST_LENGTH; k++)
             {
@@ -110,6 +111,6 @@ train_custom(uint32_t pc, uint8_t outcome) {
         gHistReg[i] = gHistReg[(i-1)];
 
     }
-    addr[1]=pcMasked;
+    addr[1]= pc & mask1;
     gHistReg[1]=outcome;
 }
